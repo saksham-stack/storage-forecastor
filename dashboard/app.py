@@ -2,26 +2,28 @@ from __future__ import annotations
 import sys
 import os
 from pathlib import Path
+import hashlib
 
-# Find the absolute repository root path
-ROOT = Path(__file__).resolve().parents[1]
+# 1. Calculate the exact root directory pathway
+# __file__ is /mount/src/storage-forecastor/dashboard/app.py
+# .resolve().parents[1] scales up to /mount/src/storage-forecastor
+ROOT = str(Path(__file__).resolve().parents[1])
 
-# Physically move Python's working execution environment to the repository root
-os.chdir(str(ROOT))
+# 2. Inject it at the absolute top of Python's search path list
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
 
-# Ensure the root path is recognized globally by the interpreter
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
-
+# 3. Third-party standard imports
 import joblib
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 import streamlit as st
 
-from ..src.features.build_features import add_lag_features, add_rolling_features, add_time_features
-from ..src.review_store import backend_label, healthcheck, load_reviews, log, log_predictions, review_summary, save_review
-from ..src.settings import get_settings
+# 4. Standard clean absolute imports (No leading dots!)
+from src.features.build_features import add_lag_features, add_rolling_features, add_time_features
+from src.review_store import backend_label, healthcheck, load_reviews, log, log_predictions, review_summary, save_review
+from src.settings import get_settings
 
 st.set_page_config(page_title='Device Storage Growth Forecaster', page_icon='📦', layout='wide')
 sns.set_theme(style='whitegrid')
