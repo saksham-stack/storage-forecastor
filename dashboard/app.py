@@ -12,17 +12,16 @@ os.chdir(str(ROOT))
 # Ensure the root path is recognized globally by the interpreter
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
-    
+
 import joblib
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 import streamlit as st
 
-
-from src.features.build_features import add_lag_features, add_rolling_features, add_time_features
-from src.review_store import backend_label, healthcheck, load_reviews, log, log_predictions, review_summary, save_review
-from src.settings import get_settings
+from ..src.features.build_features import add_lag_features, add_rolling_features, add_time_features
+from ..src.review_store import backend_label, healthcheck, load_reviews, log, log_predictions, review_summary, save_review
+from ..src.settings import get_settings
 
 st.set_page_config(page_title='Device Storage Growth Forecaster', page_icon='📦', layout='wide')
 sns.set_theme(style='whitegrid')
