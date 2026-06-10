@@ -4,13 +4,12 @@ import sys
 import os
 from pathlib import Path
 
-# 1. Force Python to calculate the absolute root directory path
-# This moves up out of 'dashboard' into 'storage-forecastor'
-ROOT = str(Path(__file__).resolve().parents[1])
+# 1. Keep ROOT as a pure Path object (Remove the str() wrapper here)
+ROOT = Path(__file__).resolve().parents[1]
 
-# 2. Inject it at index 0 so it takes absolute priority over all other paths
-if ROOT not in sys.path:
-    sys.path.insert(0, ROOT)
+# 2. Convert it to a string ONLY when inserting it into sys.path
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 # 3. Standard third-party library imports
 import joblib
