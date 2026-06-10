@@ -1,0 +1,5 @@
+profile,users,avg_capacity_gb,avg_used_gb,avg_used_pct,avg_daily_delta_gb,cleanup_rate
+media_heavy,8,320.0,177.052,59.491,0.215,0.011
+gamer,8,672.0,275.651,40.224,0.215,0.019
+office_user,8,336.0,88.442,33.266,0.086,0.002
+cleaner,8,224.0,47.807,22.73,-0.015,0.062
