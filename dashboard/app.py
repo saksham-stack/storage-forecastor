@@ -14,6 +14,8 @@ import pandas as pd
 import seaborn as sns
 import streamlit as st
 
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from src.features.build_features import add_lag_features, add_rolling_features, add_time_features
 from src.review_store import backend_label, healthcheck, load_reviews, log_predictions, review_summary, save_review
 from src.settings import get_settings
