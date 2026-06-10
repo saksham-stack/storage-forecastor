@@ -1,0 +1,17 @@
+project:
+  name: device-storage-growth-forecaster
+  forecast_horizons_days: [30, 60, 90]
+
+data:
+  synthetic_path: data/synthetic/synthetic_storage_usage.csv
+  processed_path: data/processed/
+
+modeling:
+  target_column: used_gb
+  date_column: date
+  group_column: user_id
+  profile_column: profile
+
+training:
+  test_days: 90
+  random_seed: 42
