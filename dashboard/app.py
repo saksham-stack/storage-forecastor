@@ -1,30 +1,28 @@
+import hashlib
 from __future__ import annotations
 import sys
 import os
 from pathlib import Path
-import hashlib
 
-# 1. Calculate the exact root directory pathway
-# __file__ is /mount/src/storage-forecastor/dashboard/app.py
-# .resolve().parents[1] scales up to /mount/src/storage-forecastor
+# 1. Force Python to calculate the absolute root directory path
+# This moves up out of 'dashboard' into 'storage-forecastor'
 ROOT = str(Path(__file__).resolve().parents[1])
 
-# 2. Inject it at the absolute top of Python's search path list
+# 2. Inject it at index 0 so it takes absolute priority over all other paths
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
-# 3. Third-party standard imports
+# 3. Standard third-party library imports
 import joblib
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 import streamlit as st
 
-# 4. Standard clean absolute imports (No leading dots!)
+# 4. Clean, standard absolute package imports (Notice: NO leading dots!)
 from src.features.build_features import add_lag_features, add_rolling_features, add_time_features
 from src.review_store import backend_label, healthcheck, load_reviews, log, log_predictions, review_summary, save_review
 from src.settings import get_settings
-
 st.set_page_config(page_title='Device Storage Growth Forecaster', page_icon='📦', layout='wide')
 sns.set_theme(style='whitegrid')
 
