@@ -21,8 +21,9 @@ import streamlit as st
 
 # 4. Clean, standard absolute package imports (Notice: NO leading dots!)
 from src.features.build_features import add_lag_features, add_rolling_features, add_time_features
-from src.review_store import backend_label, healthcheck, load_reviews, log, log_predictions, review_summary, save_review
+from src.review_store import backend_label, healthcheck, load_reviews, log_predictions, review_summary, save_review
 from src.settings import get_settings
+
 st.set_page_config(page_title='Device Storage Growth Forecaster', page_icon='📦', layout='wide')
 sns.set_theme(style='whitegrid')
 
