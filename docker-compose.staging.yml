@@ -1,0 +1,25 @@
+version: '3.9'
+services:
+  app:
+    build: .
+    ports:
+      - '8501:8501'
+    environment:
+      APP_ENV: staging
+      DATABASE_URL: postgresql+psycopg://app_user:app_password@postgres:5432/storage_forecaster
+      APP_BASE_URL: http://localhost:8501
+    depends_on:
+      - postgres
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: storage_forecaster
+      POSTGRES_USER: app_user
+      POSTGRES_PASSWORD: app_password
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+volumes:
+  postgres_data:

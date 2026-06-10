@@ -1,0 +1,74 @@
+version: '3.9'
+
+services:
+  app:
+    build: .
+    container_name: storage-forecaster-prod
+    restart: always
+    ports:
+      - '8501:8501'
+    environment:
+      APP_ENV: production
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:8501}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://app_user:app_password@postgres:5432/storage_forecaster}
+      PYTHONUNBUFFERED: 1
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - storage-net
+    volumes:
+      - ./models:/app/models
+      - ./reports:/app/reports
+      - ./data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: storage-forecaster-db
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-storage_forecaster}
+      POSTGRES_USER: ${POSTGRES_USER:-app_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-app_password}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=en_US.UTF-8"
+    ports:
+      - '5432:5432'
+    networks:
+      - storage-net
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-app_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: storage-forecaster-pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@admin.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+    ports:
+      - '5050:80'
+    networks:
+      - storage-net
+    depends_on:
+      - postgres
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+volumes:
+  postgres_data:
+  pgadmin_data:
+
+networks:
+  storage-net:
+    driver: bridge
