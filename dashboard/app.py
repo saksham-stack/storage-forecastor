@@ -1,13 +1,18 @@
 from __future__ import annotations
-import hashlib
 import sys
 import os
 from pathlib import Path
 
+# Find the absolute repository root path
 ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path:
-    sys.path.append(str(ROOT))
 
+# Physically move Python's working execution environment to the repository root
+os.chdir(str(ROOT))
+
+# Ensure the root path is recognized globally by the interpreter
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+    
 import joblib
 import matplotlib.pyplot as plt
 import pandas as pd
