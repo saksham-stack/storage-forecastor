@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import Iterable
+import streamlit as st
+import psycopg
+from psycopg.rows import dict_row
 
 from sqlalchemy import (
     CheckConstraint,
@@ -153,3 +156,18 @@ def review_summary() -> dict:
         'backend': backend_label(),
         'checked_at': datetime.utcnow().isoformat() + 'Z',
     }
+
+
+
+def get_db_connection():
+    try:
+        # Automatically extracts the secure string you saved in the Streamlit Settings dashboard
+        connection_string = st.secrets["database"]["url"]
+        
+        # Connects directly to Neon over secure SSL
+        conn = psycopg.connect(connection_string, row_factory=dict_row)
+        return conn
+    except Exception as e:
+        st.error(f"Database Connection Failed: {e}")
+        return None
+    
