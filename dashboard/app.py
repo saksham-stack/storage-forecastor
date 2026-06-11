@@ -525,36 +525,36 @@ with reviews_tab:
                 st.success('Review saved successfully.')
                 st.cache_data.clear()
 
-    rows = load_reviews(limit=200) if store_health.get('ok') else []
-    if rows:
-        review_df = pd.DataFrame(rows)
+    # rows = load_reviews(limit=200) if store_health.get('ok') else []
+    # if rows:
+    #     review_df = pd.DataFrame(rows)
         
-        # Export section
-        st.markdown('### Export & Analytics')
-        col_exp1, col_exp2 = st.columns(2)
+    #     # Export section
+    #     st.markdown('### Export & Analytics')
+    #     col_exp1, col_exp2 = st.columns(2)
         
-        with col_exp1:
-            if st.button('📥 Export reviews to CSV', key='export_reviews'):
-                all_reviews = load_reviews(limit=50000)
-                if all_reviews:
-                    export_df = pd.DataFrame(all_reviews)
-                    csv = export_df.to_csv(index=False)
-                    st.download_button(
-                        label="Download reviews.csv",
-                        data=csv,
-                        file_name=f"reviews_{pd.Timestamp.now().date()}.csv",
-                        mime="text/csv",
-                        key="download_reviews_csv"
-                    )
+    #     with col_exp1:
+    #         if st.button('📥 Export reviews to CSV', key='export_reviews'):
+    #             all_reviews = load_reviews(limit=50000)
+    #             if all_reviews:
+    #                 export_df = pd.DataFrame(all_reviews)
+    #                 csv = export_df.to_csv(index=False)
+    #                 st.download_button(
+    #                     label="Download reviews.csv",
+    #                     data=csv,
+    #                     file_name=f"reviews_{pd.Timestamp.now().date()}.csv",
+    #                     mime="text/csv",
+    #                     key="download_reviews_csv"
+    #                 )
         
-        with col_exp2:
-            # Summary statistics
-            st.metric('Reviews this session', len(review_df))
+    #     with col_exp2:
+    #         # Summary statistics
+    #         st.metric('Reviews this session', len(review_df))
         
-        st.markdown('### Recent reviews')
-        st.dataframe(review_df, use_container_width=True)
-    else:
-        st.info('No reviews yet. Submit the first one from this app.')
+    #     st.markdown('### Recent reviews')
+    #     st.dataframe(review_df, use_container_width=True)
+    # else:
+    #     st.info('No reviews yet. Submit the first one from this app.')
 
     st.markdown('### Production checklist')
     st.markdown('- managed PostgreSQL via `DATABASE_URL`\n- model artifacts versioned in `models/`\n- forecast event logging\n- input validation for uploads\n- Docker image + healthcheck\n- secret-driven configuration with `.env` or Streamlit secrets')
