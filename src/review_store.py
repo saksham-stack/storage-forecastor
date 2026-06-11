@@ -70,7 +70,9 @@ def get_engine() -> Engine:
         
         # 3. Clean up formatting quirks common to Neon/ElephantSQL connection strings
         if db_url.startswith("postgres://"):
-            db_url = db_url.replace("postgres://", "postgresql://", 1)
+            db_url = db_url.replace("postgres://", "postgresql+psycopg://", 1)
+        elif db_url.startswith("postgresql://"):
+            db_url = db_url.replace("postgresql://", "postgresql+psycopg://", 1)
             
         connect_args = {'check_same_thread': False} if db_url.startswith('sqlite') else {}
         
