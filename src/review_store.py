@@ -1,11 +1,7 @@
 from __future__ import annotations
-
 from datetime import datetime
 from typing import Iterable
 import streamlit as st
-import psycopg
-from psycopg.rows import dict_row
-
 from sqlalchemy import (
     CheckConstraint,
     Column,
@@ -21,7 +17,6 @@ from sqlalchemy import (
     select,
 )
 from sqlalchemy.engine import Engine
-
 from src.settings import get_settings
 
 metadata = MetaData()
@@ -55,26 +50,23 @@ prediction_logs_table = Table(
 
 _engine: Engine | None = None
 
-
-
 def get_engine() -> Engine:
     global _engine
     if _engine is None:
         db_url = None
         
-        # 1. Check for flat TOML root secret variable (Highest production priority)
+        # 1. Look for Streamlit secrets first (Production priority)
         if "DATABASE_URL" in st.secrets:
             db_url = st.secrets["DATABASE_URL"]
-        # 2. Check for nested TOML dictionary configuration
         elif "database" in st.secrets and "url" in st.secrets["database"]:
             db_url = st.secrets["database"]["url"]
             
-        # 3. Local fallback ONLY if no cloud configurations are found
+        # 2. Local fallback if secrets aren't present
         if not db_url:
             settings = get_settings()
             db_url = settings.database_url
             
-        # 4. Enforce clean psycopg3 driver dialects for PostgreSQL
+        # 3. Securely patch driver dialects for production drivers
         if db_url.startswith("postgres://"):
             db_url = db_url.replace("postgres://", "postgresql+psycopg://", 1)
         elif db_url.startswith("postgresql://") and "+psycopg" not in db_url:
@@ -90,22 +82,18 @@ def get_engine() -> Engine:
         )
     return _engine
 
-
-
 def init_store() -> None:
     metadata.create_all(get_engine())
 
-
-
 def backend_label() -> str:
-    settings = get_settings()
-    if settings.database_url.startswith('postgresql'):
+    # Safely fetch the current url configuration from our active engine
+    engine = get_engine()
+    url_str = str(engine.url)
+    if "postgresql" in url_str:
         return 'PostgreSQL (managed)'
-    if settings.database_url.startswith('sqlite'):
+    if "sqlite" in url_str:
         return 'SQLite (local fallback)'
-    return settings.database_url.split(':', 1)[0]
-
-
+    return url_str.split(':', 1)[0]
 
 def healthcheck() -> dict:
     engine = get_engine()
@@ -115,8 +103,6 @@ def healthcheck() -> dict:
         return {'ok': True, 'backend': backend_label()}
     except Exception as exc:
         return {'ok': False, 'backend': backend_label(), 'error': str(exc)}
-
-
 
 def save_review(name: str, role: str, rating: int, model_used: str, comment: str, user_hash: str | None = None) -> None:
     init_store()
@@ -131,8 +117,6 @@ def save_review(name: str, role: str, rating: int, model_used: str, comment: str
     with get_engine().begin() as conn:
         conn.execute(insert(reviews_table).values(**payload))
 
-
-
 def load_reviews(limit: int = 100) -> list[dict]:
     init_store()
     stmt = select(
@@ -146,8 +130,6 @@ def load_reviews(limit: int = 100) -> list[dict]:
     with get_engine().connect() as conn:
         rows = conn.execute(stmt).mappings().all()
     return [dict(r) for r in rows]
-
-
 
 def log_predictions(model_used: str, source: str, rows: Iterable[dict], user_hash: str | None = None) -> None:
     init_store()
@@ -166,8 +148,6 @@ def log_predictions(model_used: str, source: str, rows: Iterable[dict], user_has
     with get_engine().begin() as conn:
         conn.execute(insert(prediction_logs_table), payload)
 
-
-
 def review_summary() -> dict:
     init_store()
     with get_engine().connect() as conn:
@@ -181,5 +161,3 @@ def review_summary() -> dict:
         'backend': backend_label(),
         'checked_at': datetime.utcnow().isoformat() + 'Z',
     }
-
-    
