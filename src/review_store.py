@@ -60,23 +60,28 @@ _engine: Engine | None = None
 def get_engine() -> Engine:
     global _engine
     if _engine is None:
-        # 1. Fallback to Streamlit secrets for production deployment
-        if "database" in st.secrets and "url" in st.secrets["database"]:
+        db_url = None
+        
+        # 1. Check for flat TOML root secret variable (Highest production priority)
+        if "DATABASE_URL" in st.secrets:
+            db_url = st.secrets["DATABASE_URL"]
+        # 2. Check for nested TOML dictionary configuration
+        elif "database" in st.secrets and "url" in st.secrets["database"]:
             db_url = st.secrets["database"]["url"]
-        else:
-            # 2. Local environment fallback using your existing settings file
+            
+        # 3. Local fallback ONLY if no cloud configurations are found
+        if not db_url:
             settings = get_settings()
             db_url = settings.database_url
-        
-        # 3. Clean up formatting quirks common to Neon/ElephantSQL connection strings
+            
+        # 4. Enforce clean psycopg3 driver dialects for PostgreSQL
         if db_url.startswith("postgres://"):
             db_url = db_url.replace("postgres://", "postgresql+psycopg://", 1)
-        elif db_url.startswith("postgresql://"):
+        elif db_url.startswith("postgresql://") and "+psycopg" not in db_url:
             db_url = db_url.replace("postgresql://", "postgresql+psycopg://", 1)
             
         connect_args = {'check_same_thread': False} if db_url.startswith('sqlite') else {}
         
-        # 4. Initialize the database driver connection pool
         _engine = create_engine(
             db_url, 
             future=True, 
