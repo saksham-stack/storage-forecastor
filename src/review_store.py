@@ -60,9 +60,27 @@ _engine: Engine | None = None
 def get_engine() -> Engine:
     global _engine
     if _engine is None:
-        settings = get_settings()
-        connect_args = {'check_same_thread': False} if settings.database_url.startswith('sqlite') else {}
-        _engine = create_engine(settings.database_url, future=True, pool_pre_ping=True, connect_args=connect_args)
+        # 1. Fallback to Streamlit secrets for production deployment
+        if "database" in st.secrets and "url" in st.secrets["database"]:
+            db_url = st.secrets["database"]["url"]
+        else:
+            # 2. Local environment fallback using your existing settings file
+            settings = get_settings()
+            db_url = settings.database_url
+        
+        # 3. Clean up formatting quirks common to Neon/ElephantSQL connection strings
+        if db_url.startswith("postgres://"):
+            db_url = db_url.replace("postgres://", "postgresql://", 1)
+            
+        connect_args = {'check_same_thread': False} if db_url.startswith('sqlite') else {}
+        
+        # 4. Initialize the database driver connection pool
+        _engine = create_engine(
+            db_url, 
+            future=True, 
+            pool_pre_ping=True, 
+            connect_args=connect_args
+        )
     return _engine
 
 
@@ -157,17 +175,4 @@ def review_summary() -> dict:
         'checked_at': datetime.utcnow().isoformat() + 'Z',
     }
 
-
-
-def get_db_connection():
-    try:
-        # Automatically extracts the secure string you saved in the Streamlit Settings dashboard
-        connection_string = st.secrets["database"]["url"]
-        
-        # Connects directly to Neon over secure SSL
-        conn = psycopg.connect(connection_string, row_factory=dict_row)
-        return conn
-    except Exception as e:
-        st.error(f"Database Connection Failed: {e}")
-        return None
     
