@@ -327,7 +327,7 @@ with forecast_tab:
         uploaded = st.file_uploader('Upload a CSV with the project schema', type=['csv'])
         if uploaded is not None:
             try:
-                uploaded_df = pd.read_csv(uploaded)
+                uploaded_df = pd.read_csv(uploaded, encoding='utf-8-sig')
             except Exception as e:
                 st.error(f'❌ Failed to read CSV: {str(e)}')
                 uploaded_df = None
