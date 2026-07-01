@@ -26,6 +26,15 @@ from src.settings import get_settings
 st.set_page_config(page_title='Device Storage Growth Forecaster', page_icon='📦', layout='wide')
 sns.set_theme(style='whitegrid')
 
+st.markdown("""
+    <style>
+    div[data-testid="stMetricValue"] {
+        white-space: nowrap;
+        font-size: clamp(1.5rem, 5vw, 2.5rem) !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 SETTINGS = get_settings()
 DATA_PATH = ROOT / 'data' / 'synthetic' / 'synthetic_storage_usage.csv'
 REPORTS_DIR = ROOT / 'reports'
