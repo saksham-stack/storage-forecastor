@@ -35,6 +35,26 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# -------------------------------------------------------------
+# PRODUCTION DEPLOYMENT PROTECTION GATEWAY
+# -------------------------------------------------------------
+# In Streamlit Cloud Secrets, add: IS_PROD = true
+is_production = st.secrets.get("IS_PROD", False)
+
+# Main Navigation Setup
+tabs = ["Overview", "Data Builder", "Forecast Lab", "Model Benchmarks"]
+active_tab = st.sidebar.radio("Navigate", tabs)
+
+# Render Developer Settings in the sidebar ONLY if not in production
+if not is_production:
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("🛠️ Developer Sandbox Console")
+    try:
+        from src.review_store import backend_label
+        st.sidebar.info(f"Active Runtime Driver: {backend_label()}")
+    except Exception as e:
+        st.sidebar.error(f"Driver Registry Offline: {e}")
+
 SETTINGS = get_settings()
 DATA_PATH = ROOT / 'data' / 'synthetic' / 'synthetic_storage_usage.csv'
 REPORTS_DIR = ROOT / 'reports'
