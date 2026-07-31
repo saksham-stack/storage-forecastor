@@ -39,7 +39,10 @@ st.markdown("""
 # PRODUCTION DEPLOYMENT PROTECTION GATEWAY
 # -------------------------------------------------------------
 # In Streamlit Cloud Secrets, add: IS_PROD = true
-is_production = st.secrets.get("IS_PROD", False)
+try:
+    is_production = st.secrets.get("IS_PROD", False)
+except Exception:
+    is_production = os.getenv("IS_PROD", "false").lower() == "true"
 
 # Main Navigation Setup
 tabs = ["Overview", "Data Builder", "Forecast Lab", "Model Benchmarks"]
