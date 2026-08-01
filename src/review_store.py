@@ -1,6 +1,7 @@
 from __future__ import annotations
 from datetime import datetime
 from typing import Iterable
+import os
 import streamlit as st
 from sqlalchemy import (
     CheckConstraint,
@@ -50,43 +51,67 @@ prediction_logs_table = Table(
 
 _engine: Engine | None = None
 
+
+def _safe_secret_get(key: str, default=None):
+    """Read st.secrets safely without crashing when secrets.toml is missing."""
+    try:
+        return st.secrets.get(key, default)
+    except Exception:
+        return default
+
+
+def _resolve_database_url() -> str:
+    # 1) Azure App Setting (recommended in production)
+    db_url = os.getenv("DATABASE_URL")
+
+    # 2) Streamlit secrets top-level key
+    if not db_url:
+        db_url = _safe_secret_get("DATABASE_URL", None)
+
+    # 3) Streamlit nested key: [database] url = "..."
+    if not db_url:
+        db_cfg = _safe_secret_get("database", {})
+        if isinstance(db_cfg, dict):
+            db_url = db_cfg.get("url")
+
+    # 4) Local settings fallback
+    if not db_url:
+        db_url = get_settings().database_url
+
+    # 5) Final safety fallback
+    if not db_url:
+        db_url = "sqlite:///reviews.db"
+
+    return db_url
+
+
+def _normalize_db_url(db_url: str) -> str:
+    if db_url.startswith("postgres://"):
+        return db_url.replace("postgres://", "postgresql+psycopg://", 1)
+    if db_url.startswith("postgresql://") and "+psycopg" not in db_url:
+        return db_url.replace("postgresql://", "postgresql+psycopg://", 1)
+    return db_url
+
+
 def get_engine() -> Engine:
     global _engine
     if _engine is None:
-        db_url = None
-        
-        # 1. Look for Streamlit secrets first (Production priority)
-        if "DATABASE_URL" in st.secrets:
-            db_url = st.secrets["DATABASE_URL"]
-        elif "database" in st.secrets and "url" in st.secrets["database"]:
-            db_url = st.secrets["database"]["url"]
-            
-        # 2. Local fallback if secrets aren't present
-        if not db_url:
-            settings = get_settings()
-            db_url = settings.database_url
-            
-        # 3. Securely patch driver dialects for production drivers
-        if db_url.startswith("postgres://"):
-            db_url = db_url.replace("postgres://", "postgresql+psycopg://", 1)
-        elif db_url.startswith("postgresql://") and "+psycopg" not in db_url:
-            db_url = db_url.replace("postgresql://", "postgresql+psycopg://", 1)
-            
+        db_url = _normalize_db_url(_resolve_database_url())
         connect_args = {'check_same_thread': False} if db_url.startswith('sqlite') else {}
-        
         _engine = create_engine(
-            db_url, 
-            future=True, 
-            pool_pre_ping=True, 
+            db_url,
+            future=True,
+            pool_pre_ping=True,
             connect_args=connect_args
         )
     return _engine
 
+
 def init_store() -> None:
     metadata.create_all(get_engine())
 
+
 def backend_label() -> str:
-    # Safely fetch the current url configuration from our active engine
     engine = get_engine()
     url_str = str(engine.url)
     if "postgresql" in url_str:
@@ -94,6 +119,7 @@ def backend_label() -> str:
     if "sqlite" in url_str:
         return 'SQLite (local fallback)'
     return url_str.split(':', 1)[0]
+
 
 def healthcheck() -> dict:
     engine = get_engine()
@@ -103,6 +129,7 @@ def healthcheck() -> dict:
         return {'ok': True, 'backend': backend_label()}
     except Exception as exc:
         return {'ok': False, 'backend': backend_label(), 'error': str(exc)}
+
 
 def save_review(name: str, role: str, rating: int, model_used: str, comment: str, user_hash: str | None = None) -> None:
     init_store()
@@ -117,6 +144,7 @@ def save_review(name: str, role: str, rating: int, model_used: str, comment: str
     with get_engine().begin() as conn:
         conn.execute(insert(reviews_table).values(**payload))
 
+
 def load_reviews(limit: int = 100) -> list[dict]:
     init_store()
     stmt = select(
@@ -130,6 +158,7 @@ def load_reviews(limit: int = 100) -> list[dict]:
     with get_engine().connect() as conn:
         rows = conn.execute(stmt).mappings().all()
     return [dict(r) for r in rows]
+
 
 def log_predictions(model_used: str, source: str, rows: Iterable[dict], user_hash: str | None = None) -> None:
     init_store()
@@ -147,6 +176,7 @@ def log_predictions(model_used: str, source: str, rows: Iterable[dict], user_has
         return
     with get_engine().begin() as conn:
         conn.execute(insert(prediction_logs_table), payload)
+
 
 def review_summary() -> dict:
     init_store()
