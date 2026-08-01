@@ -53,11 +53,11 @@ _engine: Engine | None = None
 
 
 def _safe_secret_get(key: str, default=None):
-    """Read st.secrets safely without crashing when secrets.toml is missing."""
     try:
         return st.secrets.get(key, default)
     except Exception:
         return default
+
 
 
 def _resolve_database_url() -> str:
@@ -93,17 +93,17 @@ def _normalize_db_url(db_url: str) -> str:
     return db_url
 
 
-def get_engine() -> Engine:
+def get_engine():
     global _engine
     if _engine is None:
-        db_url = _normalize_db_url(_resolve_database_url())
-        connect_args = {'check_same_thread': False} if db_url.startswith('sqlite') else {}
-        _engine = create_engine(
-            db_url,
-            future=True,
-            pool_pre_ping=True,
-            connect_args=connect_args
-        )
+        db_url = _resolve_database_url()
+        if db_url.startswith("postgres://"):
+            db_url = db_url.replace("postgres://", "postgresql+psycopg://", 1)
+        elif db_url.startswith("postgresql://") and "+psycopg" not in db_url:
+            db_url = db_url.replace("postgresql://", "postgresql+psycopg://", 1)
+
+        connect_args = {"check_same_thread": False} if db_url.startswith("sqlite") else {}
+        _engine = create_engine(db_url, future=True, pool_pre_ping=True, connect_args=connect_args)
     return _engine
 
 
